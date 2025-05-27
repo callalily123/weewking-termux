@@ -1,0 +1,103 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+# Banner
+show_banner() {
+  clear
+  echo -e "\e[33m=============================="
+  echo -e "\e[31m       JUMAWAN \e[33mWEEWKING"
+  echo -e "==============================\e[0m"
+}
+
+# DNS List
+DNS_LIST=("ns-gtm.rafed.xyz" "ns-weew.rafed.xyz")
+
+# Host List
+HOSTS=("124.6.181.171" "124.6.181.26" "124.6.181.27" "124.6.181.28" "124.6.181.31")
+
+# Wakelock setup
+setup_wakelock() {
+  termux-wake-lock
+  echo -e "\e[32mWakelock enabled to prevent device sleep.\e[0m"
+}
+
+# Check DNS function
+check_dns() {
+  show_banner
+  echo "Checking DNS..."
+  for dns in "${DNS_LIST[@]}"; do
+    for host in "${HOSTS[@]}"; do
+      if ping -c 1 -W 1 "$host" >/dev/null 2>&1; then
+        echo -e "\e[32mSuccess - $dns via $host\e[0m"
+      else
+        echo -e "\e[31mFailed - $dns via $host\e[0m"
+      fi
+    done
+  done
+  echo "-------------------------------"
+}
+
+# Booster Loop
+start_boost() {
+  setup_wakelock
+  while true; do
+    check_dns
+    sleep 5
+  done
+}
+
+# Autorun Enable
+enable_autorun() {
+  mkdir -p ~/.termux/boot/
+  echo "bash ~/dns_script.sh" > ~/.termux/boot/start.sh
+  chmod +x ~/.termux/boot/start.sh
+  termux-reload-settings
+  echo -e "\e[32mAutorun enabled!\e[0m"
+}
+
+# Autorun Disable
+disable_autorun() {
+  rm -f ~/.termux/boot/start.sh
+  termux-reload-settings
+  echo -e "\e[31mAutorun disabled!\e[0m"
+}
+
+# Check Status
+check_status() {
+  if pgrep -f "dns_script.sh" >/dev/null; then
+    echo -e "\e[32mBooster is running!\e[0m"
+  else
+    echo -e "\e[31mBooster is not running.\e[0m"
+  fi
+}
+
+# Add DNS Entry
+add_dns() {
+  show_banner
+  read -p "Enter new DNS: " newdns
+  DNS_LIST+=("$newdns")
+  echo "DNS $newdns added!"
+}
+
+# Menu Loop
+while true; do
+  show_banner
+  echo "1. Check DNS"
+  echo "2. Start Booster Loop"
+  echo "3. Check Status"
+  echo "4. Add DNS"
+  echo "5. Enable Autorun"
+  echo "6. Disable Autorun"
+  echo "7. Exit"
+  read -p "Enter your choice: " choice
+
+  case $choice in
+    1) check_dns ;;
+    2) start_boost ;;
+    3) check_status ;;
+    4) add_dns ;;
+    5) enable_autorun ;;
+    6) disable_autorun ;;
+    7) exit ;;
+    *) echo "Invalid option." ;;
+  esac
+done
