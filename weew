@@ -1,5 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+# Check and Install dnsutils if not installed
+if ! command -v dig >/dev/null 2>&1; then
+  echo -e "\e[33mInstalling dnsutils...\e[0m"
+  pkg install dnsutils -y
+fi
+
 # Banner
 show_banner() {
   clear
