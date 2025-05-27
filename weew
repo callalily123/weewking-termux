@@ -1,86 +1,79 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
+
+BANNER="JUMAWAN WEEWKING"
+TERMINAL_COLORS="\e[1;33m"
+RESET="\e[0m"
 
 # Banner
-show_banner() {
-  clear
-  echo -e "\e[33m=============================="
-  echo -e "\e[31m       JUMAWAN \e[33mWEEWKING"
-  echo -e "==============================\e[0m"
-}
+clear
+echo -e "${TERMINAL_COLORS}==========================================${RESET}"
+echo -e "${TERMINAL_COLORS}======== ${BANNER} ========${RESET}"
+echo -e "${TERMINAL_COLORS}==========================================${RESET}"
 
-# DNS List
-DNS_LIST=("ns-gtm.rafed.xyz" "ns-weew.rafed.xyz")
+# Paths
+NS_FILE="$HOME/.jumawan_ns"
+AUTORUN_FILE="$HOME/.termux/boot/start.sh"
 
-# Host List
-HOSTS=("124.6.181.171" "124.6.181.26" "124.6.181.27" "124.6.181.28" "124.6.181.31")
+# Functions
 
-# Wakelock setup
-setup_wakelock() {
-  termux-wake-lock
-  echo -e "\e[32mWakelock enabled to prevent device sleep.\e[0m"
-}
-
-# Check DNS function
 check_dns() {
-  show_banner
-  echo "Checking DNS..."
-  for dns in "${DNS_LIST[@]}"; do
-    for host in "${HOSTS[@]}"; do
-      if ping -c 1 -W 1 "$host" >/dev/null 2>&1; then
-        echo -e "\e[32mSuccess - $dns via $host\e[0m"
-      else
-        echo -e "\e[31mFailed - $dns via $host\e[0m"
-      fi
-    done
-  done
-  echo "-------------------------------"
-}
-
-# Booster Loop
-start_boost() {
-  setup_wakelock
-  while true; do
-    check_dns
-    sleep 5
-  done
-}
-
-# Autorun Enable
-enable_autorun() {
-  mkdir -p ~/.termux/boot/
-  echo "bash ~/weew" > ~/.termux/boot/start.sh
-  chmod +x ~/.termux/boot/start.sh
-  termux-reload-settings
-  echo -e "\e[32mAutorun enabled!\e[0m"
-}
-
-# Autorun Disable
-disable_autorun() {
-  rm -f ~/.termux/boot/start.sh
-  termux-reload-settings
-  echo -e "\e[31mAutorun disabled!\e[0m"
-}
-
-# Check Status
-check_status() {
-  if pgrep -f "weew" >/dev/null; then
-    echo -e "\e[32mBooster is running!\e[0m"
+  echo -e "${TERMINAL_COLORS}Checking DNS...${RESET}"
+  if [ -f "$NS_FILE" ]; then
+    cat "$NS_FILE"
   else
-    echo -e "\e[31mBooster is not running.\e[0m"
+    echo "No DNS entries yet."
   fi
 }
 
-# Add DNS Entry
-add_dns() {
-  show_banner
-  read -p "Enter new DNS: " newdns
-  DNS_LIST+=("$newdns")
-  echo "DNS $newdns added!"
+start_booster() {
+  echo -e "${TERMINAL_COLORS}Starting DNS Booster Loop... (Ctrl+C to stop)${RESET}"
+  if [ -f "$NS_FILE" ]; then
+    while true; do
+      while read ns; do
+        dig @$ns google.com
+      done < "$NS_FILE"
+      sleep 2
+    done
+  else
+    echo "No DNS entries found!"
+  fi
 }
 
-# Menu Loop
+check_status() {
+  echo -e "${TERMINAL_COLORS}Checking Booster Status...${RESET}"
+  pgrep -af "dig" || echo "No booster process running."
+}
+
+add_dns() {
+  echo "Enter DNS (e.g., 8.8.8.8):"
+  read dns
+  echo "$dns" >> "$NS_FILE"
+  echo "DNS added!"
+}
+
+enable_autorun() {
+  mkdir -p ~/.termux/boot
+  echo "bash ~/weew" > "$AUTORUN_FILE"
+  chmod +x "$AUTORUN_FILE"
+  echo "Autorun enabled!"
+}
+
+disable_autorun() {
+  rm -f "$AUTORUN_FILE"
+  echo "Autorun disabled!"
+}
+
+check_autorun_status() {
+  if [ -f "$AUTORUN_FILE" ]; then
+    echo "Autorun is ENABLED."
+  else
+    echo "Autorun is DISABLED."
+  fi
+}
+
+# Menu loop
 while true; do
-  show_banner
+  echo -e "${TERMINAL_COLORS}==========================================${RESET}"
   echo "1. Check DNS"
   echo "2. Start Booster Loop"
   echo "3. Check Status"
@@ -88,16 +81,19 @@ while true; do
   echo "5. Enable Autorun"
   echo "6. Disable Autorun"
   echo "7. Exit"
-  read -p "Enter your choice: " choice
+  echo -e "${TERMINAL_COLORS}==========================================${RESET}"
+  check_autorun_status
+  echo -n "Enter your choice: "
+  read choice
 
   case $choice in
     1) check_dns ;;
-    2) start_boost ;;
+    2) start_booster ;;
     3) check_status ;;
     4) add_dns ;;
     5) enable_autorun ;;
     6) disable_autorun ;;
-    7) exit ;;
-    *) echo "Invalid option." ;;
+    7) echo "Goodbye!"; exit ;;
+    *) echo "Invalid choice!" ;;
   esac
 done
