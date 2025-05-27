@@ -1,11 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Check and Install dnsutils if not installed
-if ! command -v dig >/dev/null 2>&1; then
-  echo -e "\e[33mInstalling dnsutils...\e[0m"
-  pkg install dnsutils -y
-fi
-
 # Banner
 show_banner() {
   clear
@@ -54,7 +48,7 @@ start_boost() {
 # Autorun Enable
 enable_autorun() {
   mkdir -p ~/.termux/boot/
-  echo "bash ~/dns_script.sh" > ~/.termux/boot/start.sh
+  echo "bash ~/weew" > ~/.termux/boot/start.sh
   chmod +x ~/.termux/boot/start.sh
   termux-reload-settings
   echo -e "\e[32mAutorun enabled!\e[0m"
@@ -69,7 +63,7 @@ disable_autorun() {
 
 # Check Status
 check_status() {
-  if pgrep -f "dns_script.sh" >/dev/null; then
+  if pgrep -f "weew" >/dev/null; then
     echo -e "\e[32mBooster is running!\e[0m"
   else
     echo -e "\e[31mBooster is not running.\e[0m"
