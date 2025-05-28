@@ -1,112 +1,141 @@
 #!/bin/bash
+# JUMAWAN WEEWKING DNS BOOSTER SCRIPT
 
-# 🟡 JUMAWAN WEEWKING BANNER
-banner() {
-  clear
-  echo -e "\e[33m"
-  echo "███████╗██╗   ██╗███╗   ███╗ █████╗ ██╗  ██╗ █████╗ ███╗   ██╗"
-  echo "██╔════╝██║   ██║████╗ ████║██╔══██╗██║ ██╔╝██╔══██╗████╗  ██║"
-  echo "█████╗  ██║   ██║██╔████╔██║███████║█████╔╝ ███████║██╔██╗ ██║"
-  echo "██╔══╝  ██║   ██║██║╚██╔╝██║██╔══██║██╔═██╗ ██╔══██║██║╚██╗██║"
-  echo "██║     ╚██████╔╝██║ ╚═╝ ██║██║  ██║██║  ██╗██║  ██║██║ ╚████║"
-  echo "╚═╝      ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝"
-  echo -e "\e[0m"
+# Red Banner
+BANNER() {
+    echo -e "\e[1;31m"
+    echo "-------------------------------------------"
+    echo "    JUMAWAN WEEWKING DNS BOOSTER v1.0"
+    echo "-------------------------------------------"
+    echo -e "\e[0m"
 }
 
-# 🟡 DNS List File
-DNS_FILE="$HOME/.dnslist"
-[ ! -f "$DNS_FILE" ] && echo -e "8.8.8.8\n1.1.1.1\nns-gtm.rafed.xyz\nns-weew.rafed.xyz" > "$DNS_FILE"
+# Install dnsutils if not installed
+if ! command -v dig &> /dev/null; then
+    BANNER
+    echo -e "\e[1;31mInstalling dnsutils... Please wait...\e[0m"
+    pkg update -y && pkg install dnsutils -y
+fi
 
-# 🟡 Booster IPs
-BOOST_IPS=("8.8.8.8" "1.1.1.1" "124.6.181.31" "124.6.181.171" "124.6.181.26" "124.6.181.27" "124.6.181.25")
+# Wakelock
+termux-wake-lock &>/dev/null
 
-# 🟡 DNS Booster Function
-dns_boost() {
-  echo "Starting DNS Boost..."
-  for ip in "${BOOST_IPS[@]}"; do
-    echo "Boosting with $ip..."
-    ping -c 3 "$ip"
-  done
-  echo "DNS Boost done!"
-  sleep 2
+# Core DNS Variables
+NS=''
+NS1=''
+NS2=''
+NS3=''
+NS4=''
+NS5='ns-gtm.rafed.xyz'
+NS6='ns-weew.rafed.xyz'
+A=''
+
+LOOP_DELAY=0
+
+declare -a HOSTS=(
+    '124.6.181.31'
+    '124.6.181.171'
+    '124.6.181.26'
+    '124.6.181.27'
+    '124.6.181.25'
+)
+
+network_booster() {
+    echo "Starting network booster..."
+    while true; do
+        for host in "${HOSTS[@]}"; do
+            ping -c 1 "${host}" >/dev/null &
+        done
+        wait
+    done
 }
 
-# 🟡 Dig Loop Function
-start_dig() {
-  echo "Starting dig loop... Press CTRL+C to stop."
-  while true; do
-    while read -r ns; do
-      echo "Digging $ns..."
-      dig @$ns google.com
-    done < "$DNS_FILE"
-    sleep 5
-  done
+endscript() {
+    unset NS NS1 NS2 NS3 NS4 NS5 NS6 A LOOP_DELAY HOSTS
+    exit 1
 }
 
-# 🟡 Add NS
-add_ns() {
-  read -p "Enter NS to add: " ns
-  echo "$ns" >> "$DNS_FILE"
-  echo "NS $ns added."
-  sleep 1
+trap endscript 2 15
+
+check() {
+    for host in "${HOSTS[@]}"; do
+        for R in "${A}" "${NS}" "${NS1}" "${NS2}" "${NS3}" "${NS4}" "${NS5}" "${NS6}"; do
+            [ -z "$R" ] && continue
+            if [ -z "$(dig "@${host}" "${R}")" ]; then
+                echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
+            else
+                echo -e "\e[32mSuccess - Querying: ${R} from ${host}\e[0m"
+            fi
+        done
+    done
 }
 
-# 🟡 Check NS
-check_ns() {
-  echo "Current NS entries:"
-  cat "$DNS_FILE"
-  sleep 2
+enable_autorun() {
+    mkdir -p ~/../usr/etc/profile.d
+    SCRIPT_PATH="$(realpath "$0")"
+    echo "bash '$SCRIPT_PATH'" > ~/../usr/etc/profile.d/weew-autorun.sh
+    chmod +x ~/../usr/etc/profile.d/weew-autorun.sh
+    echo -e "\e[32mAutorun successfully enabled!\e[0m"
 }
 
-# 🟡 Delete NS
-delete_ns() {
-  read -p "Enter NS to delete: " ns
-  sed -i "/$ns/d" "$DNS_FILE"
-  echo "NS $ns deleted."
-  sleep 1
+disable_autorun() {
+    rm -f ~/../usr/etc/profile.d/weew-autorun.sh
+    echo -e "\e[32mAutorun successfully deleted!\e[0m"
 }
 
-# 🟡 Autorun Setup
-setup_autorun() {
-  echo "bash $PWD/$(basename "$0")" > $PREFIX/etc/profile.d/jumawan.sh
-  chmod +x $PREFIX/etc/profile.d/jumawan.sh
-  echo "Autorun setup done!"
-  sleep 1
-}
-
-# 🟡 Remove Autorun
-remove_autorun() {
-  rm -f $PREFIX/etc/profile.d/jumawan.sh
-  echo "Autorun removed!"
-  sleep 1
-}
-
-# 🟡 Main Menu
-main_menu() {
-  while true; do
-    banner
-    echo -e "\e[33m[1] Add NS"
-    echo "[2] Check NS"
-    echo "[3] Delete NS"
-    echo "[4] Start Dig Loop"
-    echo "[5] DNS Booster"
-    echo "[6] Setup Autorun"
-    echo "[7] Remove Autorun"
-    echo "[8] Exit\e[0m"
-    read -p "Choose an option: " opt
-    case $opt in
-      1) add_ns ;;
-      2) check_ns ;;
-      3) delete_ns ;;
-      4) start_dig ;;
-      5) dns_boost ;;
-      6) setup_autorun ;;
-      7) remove_autorun ;;
-      8) exit ;;
-      *) echo "Invalid option!" ;;
+menu() {
+    clear
+    BANNER
+    echo -e "\e[33m[1]\e[0m Add NS"
+    echo -e "\e[33m[2]\e[0m Check NS"
+    echo -e "\e[33m[3]\e[0m Delete NS"
+    echo -e "\e[33m[4]\e[0m Start Dig Loop"
+    echo -e "\e[33m[5]\e[0m Enable Autorun"
+    echo -e "\e[33m[6]\e[0m Delete Autorun"
+    echo -e "\e[33m[0]\e[0m Exit"
+    echo ""
+    read -p "Select option: " opt
+    case "$opt" in
+        1)
+            read -p "Enter NS: " ns
+            A="$ns"
+            ;;
+        2)
+            check
+            read -p "Press enter to return to menu..."
+            ;;
+        3)
+            A=''
+            ;;
+        4)
+            BANNER
+            echo "Running DNS Booster..."
+            network_booster & NETWORK_BOOSTER_PID=$!
+            trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; endscript' 2 15
+            while true; do
+                check
+                echo '-----------------------------------------'
+                sleep "${LOOP_DELAY}"
+            done
+            ;;
+        5)
+            enable_autorun
+            sleep 2
+            ;;
+        6)
+            disable_autorun
+            sleep 2
+            ;;
+        0)
+            endscript
+            ;;
+        *)
+            echo "Invalid option!"
+            sleep 1
+            ;;
     esac
-  done
+    menu
 }
 
-# 🟡 Run Menu
-main_menu
+# Start
+menu
