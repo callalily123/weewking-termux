@@ -70,14 +70,14 @@ check() {
     done
 }
 
-setup_autorun() {
-    mkdir -p ~/.termux
-    mkdir -p ~/.termux/boot
-    echo "#!/data/data/com.termux/files/usr/bin/bash" > ~/.termux/boot/boot.sh
-    echo "cd $(pwd) && bash $(basename "$0")" >> ~/.termux/boot/boot.sh
-    chmod +x ~/.termux/boot/boot.sh
-    termux-setup-storage
-    echo -e "\e[1;32mAutorun has been set up successfully!\e[0m"
+enable_autorun() {
+    cp "$0" ~/../usr/etc/profile.d/weew-autorun.sh
+    echo -e "\e[32mAutorun successfully enabled!\e[0m"
+}
+
+disable_autorun() {
+    rm -f ~/../usr/etc/profile.d/weew-autorun.sh
+    echo -e "\e[32mAutorun successfully deleted!\e[0m"
 }
 
 menu() {
@@ -87,7 +87,8 @@ menu() {
     echo -e "\e[33m[2]\e[0m Check NS"
     echo -e "\e[33m[3]\e[0m Delete NS"
     echo -e "\e[33m[4]\e[0m Start Dig Loop"
-    echo -e "\e[33m[5]\e[0m Setup Autorun"
+    echo -e "\e[33m[5]\e[0m Enable Autorun"
+    echo -e "\e[33m[6]\e[0m Delete Autorun"
     echo -e "\e[33m[0]\e[0m Exit"
     echo ""
     read -p "Select option: " opt
@@ -115,8 +116,12 @@ menu() {
             done
             ;;
         5)
-            setup_autorun
-            read -p "Press enter to return to menu..."
+            enable_autorun
+            sleep 2
+            ;;
+        6)
+            disable_autorun
+            sleep 2
             ;;
         0)
             endscript
