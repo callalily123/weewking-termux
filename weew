@@ -20,6 +20,24 @@ fi
 # Wakelock
 termux-wake-lock &>/dev/null
 
+# Autorun Setup (Termux-boot + .bashrc fallback)
+SCRIPT_PATH="$(realpath "$0")"
+BOOT_SCRIPT="$HOME/.termux/boot/weew.sh"
+
+# Setup Termux-boot autorun
+if [ ! -f "$BOOT_SCRIPT" ]; then
+    mkdir -p "$HOME/.termux/boot"
+    echo -e "#!/data/data/com.termux/files/usr/bin/bash\ntermux-wake-lock\nbash '$SCRIPT_PATH'" > "$BOOT_SCRIPT"
+    chmod +x "$BOOT_SCRIPT"
+    echo -e "\e[32mTermux-boot autorun created!\e[0m"
+fi
+
+# Fallback .bashrc autorun
+if ! grep -Fq "bash '$SCRIPT_PATH'" "$HOME/.bashrc"; then
+    echo "bash '$SCRIPT_PATH'" >> "$HOME/.bashrc"
+    echo -e "\e[32m.bashrc autorun added!\e[0m"
+fi
+
 # Core DNS Variables
 NS=''
 NS1=''
@@ -70,26 +88,6 @@ check() {
     done
 }
 
-enable_autorun() {
-    SCRIPT_PATH="$(realpath "$0")"
-    AUTORUN_CMD="bash '$SCRIPT_PATH'"
-
-    if grep -Fxq "$AUTORUN_CMD" ~/.bashrc; then
-        echo -e "\e[32mAutorun already enabled!\e[0m"
-    else
-        echo "$AUTORUN_CMD" >> ~/.bashrc
-        echo -e "\e[32mAutorun successfully enabled!\e[0m"
-    fi
-}
-
-disable_autorun() {
-    SCRIPT_PATH="$(realpath "$0")"
-    AUTORUN_CMD="bash '$SCRIPT_PATH'"
-
-    sed -i "\|$AUTORUN_CMD|d" ~/.bashrc
-    echo -e "\e[32mAutorun successfully deleted!\e[0m"
-}
-
 menu() {
     clear
     BANNER
@@ -97,8 +95,6 @@ menu() {
     echo -e "\e[33m[2]\e[0m Check NS"
     echo -e "\e[33m[3]\e[0m Delete NS"
     echo -e "\e[33m[4]\e[0m Start Dig Loop"
-    echo -e "\e[33m[5]\e[0m Enable Autorun"
-    echo -e "\e[33m[6]\e[0m Delete Autorun"
     echo -e "\e[33m[0]\e[0m Exit"
     echo ""
     read -p "Select option: " opt
@@ -124,14 +120,6 @@ menu() {
                 echo '-----------------------------------------'
                 sleep "${LOOP_DELAY}"
             done
-            ;;
-        5)
-            enable_autorun
-            sleep 2
-            ;;
-        6)
-            disable_autorun
-            sleep 2
             ;;
         0)
             endscript
