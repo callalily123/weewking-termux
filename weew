@@ -61,10 +61,10 @@ check() {
     for host in "${HOSTS[@]}"; do
         for R in "${A}" "${NS}" "${NS1}" "${NS2}" "${NS3}" "${NS4}" "${NS5}" "${NS6}"; do
             [ -z "$R" ] && continue
-            if [ -z "$(dig "@${host}" "${R}")" ]; then
-                echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
-            else
+            if dig "@${host}" "${R}" | grep -q 'ANSWER'; then
                 echo -e "\e[32mSuccess - Querying: ${R} from ${host}\e[0m"
+            else
+                echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
             fi
         done
     done
@@ -74,7 +74,6 @@ enable_autorun() {
     SCRIPT_PATH="$(realpath "$0")"
     AUTORUN_CMD="bash '$SCRIPT_PATH'"
 
-    # Check if already added
     if grep -Fxq "$AUTORUN_CMD" ~/.bashrc; then
         echo -e "\e[32mAutorun already enabled!\e[0m"
     else
