@@ -1,17 +1,17 @@
 #!/bin/bash
+# Final DNS Loop with Menu, Red Banner, Wakelock, and Autorun
 
-# ======================
-#        JUMAWAN WEEWKING
-# ======================
-# DNS Dig Loop & Network Booster Script
-# Version 1.0
+# Core DNS Variables - DO NOT TOUCH
+NS=''
+NS1=''
+NS2=''
+NS3=''
+NS4=''
+NS5='ns-gtm.rafed.xyz'
+NS6='ns-weew.rafed.xyz'
+A=''
 
-RED='\033[0;31m'
-NC='\033[0m'
-
-NS_LIST=()
 LOOP_DELAY=0
-AUTORUN_FILE="$HOME/.dns_autodig_autorun"
 
 declare -a HOSTS=(
     '124.6.181.31'
@@ -21,7 +21,29 @@ declare -a HOSTS=(
     '124.6.181.25'
 )
 
+# Banner Function
+banner() {
+    echo -e "\e[1;31m" # Red Color
+    echo "███████╗██╗███╗   ██╗███████╗██╗    ██╗██╗  ██╗██╗███╗   ██╗ ██████╗ "
+    echo "██╔════╝██║████╗  ██║██╔════╝██║    ██║██║ ██╔╝██║████╗  ██║██╔═══██╗"
+    echo "███████╗██║██╔██╗ ██║█████╗  ██║ █╗ ██║█████╔╝ ██║██╔██╗ ██║██║   ██║"
+    echo "╚════██║██║██║╚██╗██║██╔══╝  ██║███╗██║██╔═██╗ ██║██║╚██╗██║██║   ██║"
+    echo "███████║██║██║ ╚████║███████╗╚███╔███╔╝██║  ██╗██║██║ ╚████║╚██████╔╝"
+    echo "╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo "                     JUMAWAN WEEWKING"
+    echo -e "\e[0m"
+}
+
+# Check DNSUTILS
+if ! command -v dig &> /dev/null; then
+    banner
+    echo -e "\e[31m[!] Please install dnsutils first! (pkg install dnsutils)\e[0m"
+    exit 1
+fi
+
+# Network Booster
 network_booster() {
+    echo "Starting network booster..."
     while true; do
         for host in "${HOSTS[@]}"; do
             ping -c 1 "${host}" >/dev/null &
@@ -30,24 +52,44 @@ network_booster() {
     done
 }
 
+# DNS Check Function (Core - Do Not Touch)
 check() {
     for host in "${HOSTS[@]}"; do
-        for R in "${NS_LIST[@]}"; do
-            if [ -z "$R" ]; then continue; fi
+        for R in "${A}" "${NS}" "${NS1}" "${NS2}" "${NS3}" "${NS4}" "${NS5}" "${NS6}"; do
+            [ -z "$R" ] && continue
             if [ -z "$(dig "@${host}" "${R}")" ]; then
-                echo -e "${RED}Failed - Querying: ${R} from ${host}${NC}"
+                echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
             else
-                echo -e "\e[32mSuccess - Querying: ${R} from ${host}${NC}"
+                echo -e "\e[32mSuccess - Querying: ${R} from ${host}\e[0m"
             fi
         done
     done
 }
 
-start_dig_loop() {
-    echo -e "${RED}Starting DNS Dig Loop...${NC}"
-    network_booster &
-    NETWORK_BOOSTER_PID=$!
-    trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null' 2 15
+# Menu Functions
+add_ns() {
+    read -p "Enter NS to add: " NS
+    echo -e "\e[32mNS set to: $NS\e[0m"
+}
+
+check_ns() {
+    echo -e "\e[33mCurrent NS:\e[0m"
+    for ns_var in NS NS1 NS2 NS3 NS4 NS5 NS6; do
+        eval "val=\${$ns_var}"
+        [ -n "$val" ] && echo "$val"
+    done
+}
+
+delete_ns() {
+    echo -e "\e[31mClearing custom NS entries...\e[0m"
+    NS=''; NS1=''; NS2=''; NS3=''; NS4=''
+}
+
+start_loop() {
+    banner
+    echo "Script loop: ${LOOP_DELAY} seconds"
+    network_booster & NETWORK_BOOSTER_PID=$!
+    trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; exit' 2 15
     while true; do
         check
         echo '-----------------------------------------'
@@ -55,93 +97,29 @@ start_dig_loop() {
     done
 }
 
-autorun_start() {
-    termux-wake-lock
-    echo -e "${RED}Autorun has been enabled.${NC}"
-    echo "bash $PWD/$(basename "$0") &" > "$AUTORUN_FILE"
-}
+# Wakelock (Termux)
+termux-wake-lock 2>/dev/null
 
-autorun_stop() {
-    termux-wake-unlock
-    echo -e "${RED}Autorun has been disabled.${NC}"
-    rm -f "$AUTORUN_FILE"
-}
+# Autorun Setup
+mkdir -p ~/.termux
+echo 'bash ~/dnsloop.sh' > ~/.termux/boot.sh
+chmod +x ~/.termux/boot.sh
 
-autorun_status() {
-    if [ -f "$AUTORUN_FILE" ]; then
-        echo -e "${RED}Autorun is ENABLED.${NC}"
-    else
-        echo -e "${RED}Autorun is DISABLED.${NC}"
-    fi
-}
-
-install_dnsutils() {
-    echo -e "${RED}=============================${NC}"
-    echo -e "${RED}    JUMAWAN WEEWKING MENU    ${NC}"
-    echo -e "${RED}=============================${NC}"
-    pkg install dnsutils -y
-}
-
-banner() {
-    echo -e "${RED}=============================${NC}"
-    echo -e "${RED}    JUMAWAN WEEWKING MENU    ${NC}"
-    echo -e "${RED}=============================${NC}"
-}
-
-main_menu() {
-    while true; do
-        banner
-        echo -e "[1] Add NS"
-        echo -e "[2] Check NS"
-        echo -e "[3] Delete NS"
-        echo -e "[4] Start Dig Loop"
-        echo -e "[5] Autorun Start"
-        echo -e "[6] Autorun Stop"
-        echo -e "[7] Autorun Status"
-        echo -e "[8] Exit"
-        echo -n "Choose an option: "
-        read opt
-        case $opt in
-            1)
-                echo -n "Enter NS: "
-                read ns
-                NS_LIST+=("$ns")
-                ;;
-            2)
-                echo "NS List: ${NS_LIST[*]}"
-                ;;
-            3)
-                echo "NS List: ${NS_LIST[*]}"
-                echo -n "Enter NS to delete: "
-                read ns_del
-                NS_LIST=( "${NS_LIST[@]/$ns_del}" )
-                ;;
-            4)
-                start_dig_loop
-                ;;
-            5)
-                autorun_start
-                ;;
-            6)
-                autorun_stop
-                ;;
-            7)
-                autorun_status
-                ;;
-            8)
-                echo -e "${RED}Exiting...${NC}"
-                exit 0
-                ;;
-            *)
-                echo -e "${RED}Invalid option.${NC}"
-                ;;
-        esac
-    done
-}
-
-# Install dnsutils if not present
-if ! command -v dig &> /dev/null; then
-    install_dnsutils
-fi
-
-main_menu
+# Main Menu
+while true; do
+    banner
+    echo -e "\e[36m1) Add NS"
+    echo "2) Check NS"
+    echo "3) Delete NS"
+    echo "4) Start Loop"
+    echo "5) Exit\e[0m"
+    read -p "Select option: " opt
+    case $opt in
+        1) add_ns ;;
+        2) check_ns ;;
+        3) delete_ns ;;
+        4) start_loop ;;
+        5) echo "Exiting..."; exit ;;
+        *) echo "Invalid option" ;;
+    esac
+done
