@@ -70,6 +70,16 @@ check() {
     done
 }
 
+setup_autorun() {
+    mkdir -p ~/.termux
+    mkdir -p ~/.termux/boot
+    echo "#!/data/data/com.termux/files/usr/bin/bash" > ~/.termux/boot/boot.sh
+    echo "cd $(pwd) && bash $(basename "$0")" >> ~/.termux/boot/boot.sh
+    chmod +x ~/.termux/boot/boot.sh
+    termux-setup-storage
+    echo -e "\e[1;32mAutorun has been set up successfully!\e[0m"
+}
+
 menu() {
     clear
     BANNER
@@ -77,6 +87,7 @@ menu() {
     echo -e "\e[33m[2]\e[0m Check NS"
     echo -e "\e[33m[3]\e[0m Delete NS"
     echo -e "\e[33m[4]\e[0m Start Dig Loop"
+    echo -e "\e[33m[5]\e[0m Setup Autorun"
     echo -e "\e[33m[0]\e[0m Exit"
     echo ""
     read -p "Select option: " opt
@@ -103,6 +114,10 @@ menu() {
                 sleep "${LOOP_DELAY}"
             done
             ;;
+        5)
+            setup_autorun
+            read -p "Press enter to return to menu..."
+            ;;
         0)
             endscript
             ;;
@@ -113,15 +128,6 @@ menu() {
     esac
     menu
 }
-
-# Autorun Setup (Termux)
-setup_autorun() {
-    mkdir -p $HOME/.termux
-    echo -e "#!/bin/bash\nbash \$HOME/dnsbooster.sh" > $HOME/.termux/boot.sh
-    chmod +x $HOME/.termux/boot.sh
-    termux-reload-settings
-}
-setup_autorun
 
 # Start
 menu
