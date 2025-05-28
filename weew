@@ -1,155 +1,154 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
 
-# Banner
-show_banner() {
-  clear
-  echo -e "\e[33m=============================="
-  echo -e "\e[31m       JUMAWAN \e[33mWEEWKING"
-  echo -e "==============================\e[0m"
+# Banner function
+banner() {
+    echo -e "\e[31m"
+    echo "##############################################"
+    echo "#                                            #"
+    echo "#        Powered by JUMAWAN WEEWKING         #"
+    echo "#                                            #"
+    echo "##############################################"
+    echo -e "\e[0m"
 }
 
-# DNS List File
-DNS_FILE="$HOME/.dnslist"
+# Variables
+NS_FILE="$HOME/.dns_ns"
+LOOP_DELAY=0
+HOSTS=(
+    '124.6.181.31'
+    '124.6.181.171'
+    '124.6.181.26'
+    '124.6.181.27'
+    '124.6.181.25'
+)
 
-# Hosts
-HOSTS=("124.6.181.171" "124.6.181.26" "124.6.181.27" "124.6.181.28" "124.6.181.31")
-
-# Initialize DNS List File if missing
-init_dns_file() {
-  if [ ! -f "$DNS_FILE" ]; then
-    echo "ns-gtm.rafed.xyz" > "$DNS_FILE"
-    echo "ns-weew.rafed.xyz" >> "$DNS_FILE"
-  fi
-}
-
-# Load DNS List from File
-load_dns_list() {
-  DNS_LIST=()
-  while IFS= read -r line; do
-    DNS_LIST+=("$line")
-  done < "$DNS_FILE"
-}
-
-# Wakelock setup
-setup_wakelock() {
-  termux-wake-lock
-  echo -e "\e[32mWakelock enabled to prevent device sleep.\e[0m"
-}
-
-# Check DNS function
-check_dns() {
-  show_banner
-  load_dns_list
-  echo "Checking DNS..."
-  for dns in "${DNS_LIST[@]}"; do
-    for host in "${HOSTS[@]}"; do
-      if ping -c 1 -W 1 "$host" >/dev/null 2>&1; then
-        echo -e "\e[32mSuccess - $dns via $host\e[0m"
-      else
-        echo -e "\e[31mFailed - $dns via $host\e[0m"
-      fi
+# Network Booster (paspas ang signal boss)
+network_booster() {
+    while true; do
+        for host in "${HOSTS[@]}"; do
+            ping -c 1 "${host}" >/dev/null &
+        done
+        wait
     done
-  done
-  echo "-------------------------------"
 }
 
-# Booster Loop
-start_boost() {
-  setup_wakelock
-  while true; do
-    check_dns
-    sleep 5
-  done
+# DNS checker function
+check_dns() {
+    if [ ! -f "$NS_FILE" ]; then
+        echo "No DNS entries added yet!"
+        return
+    fi
+
+    NS_LIST=$(cat "$NS_FILE")
+    for host in "${HOSTS[@]}"; do
+        for ns in $NS_LIST; do
+            if [ -z "$(dig @"$host" "$ns")" ]; then
+                echo -e "\e[31mFailed - Querying: ${ns} from ${host}\e[0m"
+            else
+                echo -e "\e[32mSuccess - Querying: ${ns} from ${host}\e[0m"
+            fi
+        done
+    done
 }
 
-# Autorun Enable
-enable_autorun() {
-  mkdir -p ~/.termux/boot/
-  echo "bash $HOME/weew" > ~/.termux/boot/start.sh
-  chmod +x ~/.termux/boot/start.sh
-  termux-reload-settings
-  echo -e "\e[32mAutorun enabled!\e[0m"
+# Function to add DNS
+add_ns() {
+    read -p "Enter DNS to add: " newns
+    if grep -Fxq "$newns" "$NS_FILE"; then
+        echo "This DNS is already in the list."
+    else
+        echo "$newns" >> "$NS_FILE"
+        echo "DNS added successfully."
+    fi
 }
 
-# Autorun Disable
-disable_autorun() {
-  rm -f ~/.termux/boot/start.sh
-  termux-reload-settings
-  echo -e "\e[31mAutorun disabled!\e[0m"
+# Function to delete DNS
+delete_ns() {
+    read -p "Enter DNS to delete: " delns
+    if grep -Fxq "$delns" "$NS_FILE"; then
+        sed -i "/^$delns$/d" "$NS_FILE"
+        echo "DNS deleted."
+    else
+        echo "DNS not found in the list."
+    fi
 }
 
-# Check Autorun Status
-check_autorun() {
-  if [ -f ~/.termux/boot/start.sh ]; then
-    echo -e "\e[32mAutorun is ENABLED.\e[0m"
-  else
-    echo -e "\e[31mAutorun is DISABLED.\e[0m"
-  fi
+# Function to view DNS
+view_ns() {
+    echo "Current DNS list:"
+    if [ -f "$NS_FILE" ]; then
+        cat "$NS_FILE"
+    else
+        echo "No DNS entries yet."
+    fi
 }
 
-# Check Booster Status
-check_status() {
-  if pgrep -f "weew" >/dev/null; then
-    echo -e "\e[32mBooster is running!\e[0m"
-  else
-    echo -e "\e[31mBooster is not running.\e[0m"
-  fi
+# Autorun ON
+autorun_on() {
+    mkdir -p ~/.termux
+    echo "bash $PWD/$(basename $0)" > ~/.termux/boot.sh
+    chmod +x ~/.termux/boot.sh
+    termux-wake-lock
+    echo "Autorun enabled!"
 }
 
-# Add DNS Entry
-add_dns() {
-  show_banner
-  read -p "Enter new DNS: " newdns
-  if grep -Fxq "$newdns" "$DNS_FILE"; then
-    echo -e "\e[31mDNS already exists.\e[0m"
-  else
-    echo "$newdns" >> "$DNS_FILE"
-    echo -e "\e[32mDNS $newdns added!\e[0m"
-  fi
+# Autorun OFF
+autorun_off() {
+    rm -f ~/.termux/boot.sh
+    termux-wake-unlock
+    echo "Autorun disabled!"
 }
 
-# Delete DNS Entry
-delete_dns() {
-  show_banner
-  load_dns_list
-  echo "Current DNS List:"
-  for i in "${!DNS_LIST[@]}"; do
-    echo "$((i+1)). ${DNS_LIST[$i]}"
-  done
-  read -p "Enter DNS number to delete: " del
-  if [[ "$del" =~ ^[0-9]+$ ]] && ((del>=1 && del<=${#DNS_LIST[@]})); then
-    sed -i "${del}d" "$DNS_FILE"
-    echo -e "\e[32mDNS entry deleted.\e[0m"
-  else
-    echo -e "\e[31mInvalid selection.\e[0m"
-  fi
+# Main menu
+menu() {
+    while true; do
+        clear
+        banner
+        echo -e "\e[1;36mMenu Options:\e[0m"
+        echo "1. Add DNS"
+        echo "2. Delete DNS"
+        echo "3. View DNS"
+        echo "4. Check DNS"
+        echo "5. Enable Autorun"
+        echo "6. Disable Autorun"
+        echo "7. Start DNS Loop"
+        echo "8. Exit"
+        echo ""
+        read -p "Select an option: " opt
+
+        case $opt in
+            1) add_ns ;;
+            2) delete_ns ;;
+            3) view_ns ;;
+            4) check_dns ;;
+            5) autorun_on ;;
+            6) autorun_off ;;
+            7)
+                echo "DNS loop started. Press CTRL+C to stop."
+                network_booster &
+                while true; do
+                    check_dns
+                    sleep $LOOP_DELAY
+                done
+                ;;
+            8) echo "Thank you boss!" && exit ;;
+            *) echo "Invalid option. Please try again." ;;
+        esac
+        read -p "Press Enter to continue..."
+    done
 }
 
-# Menu Loop
-init_dns_file
-while true; do
-  show_banner
-  echo "1. Check DNS"
-  echo "2. Start Booster Loop"
-  echo "3. Check Status"
-  echo "4. Check Autorun Status"
-  echo "5. Add DNS"
-  echo "6. Delete DNS"
-  echo "7. Enable Autorun"
-  echo "8. Disable Autorun"
-  echo "9. Exit"
-  read -p "Enter your choice: " choice
+# Install requirements
+if ! command -v dig >/dev/null; then
+    echo "Installing dnsutils..."
+    pkg install dnsutils -y
+fi
 
-  case $choice in
-    1) check_dns ;;
-    2) start_boost ;;
-    3) check_status ;;
-    4) check_autorun ;;
-    5) add_dns ;;
-    6) delete_dns ;;
-    7) enable_autorun ;;
-    8) disable_autorun ;;
-    9) exit ;;
-    *) echo "Invalid option." ;;
-  esac
-done
+if ! command -v termux-wake-lock >/dev/null; then
+    echo "Installing Termux:API..."
+    pkg install termux-api -y
+fi
+
+# Run banner and menu
+banner
+menu
