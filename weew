@@ -53,6 +53,9 @@ network_booster() {
 endscript() {
     termux-wake-unlock &>/dev/null
     unset NS NS1 NS2 NS3 NS4 NS5 NS6 A LOOP_DELAY HOSTS
+    if [ -n "$NETWORK_BOOSTER_PID" ]; then
+        kill "$NETWORK_BOOSTER_PID" 2>/dev/null
+    fi
     exit 1
 }
 
@@ -69,6 +72,23 @@ check() {
             fi
         done
     done
+}
+
+status_checker() {
+    BANNER
+    if pgrep -f "ping -c 1" > /dev/null; then
+        echo -e "\e[32m[RUNNING]\e[0m Network Booster is running."
+    else
+        echo -e "\e[31m[STOPPED]\e[0m Network Booster is not running."
+    fi
+
+    if pgrep -f "dig @" > /dev/null; then
+        echo -e "\e[32m[RUNNING]\e[0m Dig loop is running."
+    else
+        echo -e "\e[31m[STOPPED]\e[0m Dig loop is not running."
+    fi
+
+    read -p "Press enter to return to menu..."
 }
 
 enable_autorun() {
@@ -100,6 +120,7 @@ menu() {
     echo -e "\e[33m[4]\e[0m Start Dig Loop"
     echo -e "\e[33m[5]\e[0m Enable Autorun"
     echo -e "\e[33m[6]\e[0m Delete Autorun"
+    echo -e "\e[33m[7]\e[0m Check Booster Status"
     echo -e "\e[33m[0]\e[0m Exit"
     echo ""
     read -p "Select option: " opt
@@ -133,6 +154,9 @@ menu() {
         6)
             disable_autorun
             sleep 2
+            ;;
+        7)
+            status_checker
             ;;
         0)
             endscript
