@@ -1,7 +1,29 @@
 #!/bin/bash
-# Final DNS Loop with Menu, Red Banner, Wakelock, and Autorun
 
-# Core DNS Variables - DO NOT TOUCH
+# Red Banner
+banner() {
+  echo -e "\e[1;31m"
+  echo "███████╗██╗   ██╗███╗   ██╗██╗   ██╗ █████╗ ███╗   ██╗"
+  echo "██╔════╝██║   ██║████╗  ██║██║   ██║██╔══██╗████╗  ██║"
+  echo "███████╗██║   ██║██╔██╗ ██║██║   ██║███████║██╔██╗ ██║"
+  echo "╚════██║██║   ██║██║╚██╗██║██║   ██║██╔══██║██║╚██╗██║"
+  echo "███████║╚██████╔╝██║ ╚████║╚██████╔╝██║  ██║██║ ╚████║"
+  echo "╚══════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝"
+  echo -e "\e[0m"
+  echo -e "\e[1;33m          [ JUMAWAN WEEWKING DNS BOOSTER ]\e[0m"
+}
+
+# Auto-install dnsutils
+if ! command -v dig &> /dev/null; then
+  banner
+  echo -e "\e[1;33mInstalling dnsutils...\e[0m"
+  pkg install dnsutils -y
+fi
+
+# Wakelock
+termux-wake-lock
+
+# Core Code (unchanged)
 NS=''
 NS1=''
 NS2=''
@@ -12,7 +34,6 @@ NS6='ns-weew.rafed.xyz'
 A=''
 
 LOOP_DELAY=0
-
 declare -a HOSTS=(
     '124.6.181.31'
     '124.6.181.171'
@@ -21,105 +42,81 @@ declare -a HOSTS=(
     '124.6.181.25'
 )
 
-# Banner Function
-banner() {
-    echo -e "\e[1;31m" # Red Color
-    echo "███████╗██╗███╗   ██╗███████╗██╗    ██╗██╗  ██╗██╗███╗   ██╗ ██████╗ "
-    echo "██╔════╝██║████╗  ██║██╔════╝██║    ██║██║ ██╔╝██║████╗  ██║██╔═══██╗"
-    echo "███████╗██║██╔██╗ ██║█████╗  ██║ █╗ ██║█████╔╝ ██║██╔██╗ ██║██║   ██║"
-    echo "╚════██║██║██║╚██╗██║██╔══╝  ██║███╗██║██╔═██╗ ██║██║╚██╗██║██║   ██║"
-    echo "███████║██║██║ ╚████║███████╗╚███╔███╔╝██║  ██╗██║██║ ╚████║╚██████╔╝"
-    echo "╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ "
-    echo "                     JUMAWAN WEEWKING"
-    echo -e "\e[0m"
-}
-
-# Check DNSUTILS
-if ! command -v dig &> /dev/null; then
-    banner
-    echo -e "\e[31m[!] Please install dnsutils first! (pkg install dnsutils)\e[0m"
-    exit 1
-fi
-
-# Network Booster
 network_booster() {
-    echo "Starting network booster..."
-    while true; do
-        for host in "${HOSTS[@]}"; do
-            ping -c 1 "${host}" >/dev/null &
-        done
-        wait
-    done
-}
-
-# DNS Check Function (Core - Do Not Touch)
-check() {
+  echo "Starting network booster..."
+  while true; do
     for host in "${HOSTS[@]}"; do
-        for R in "${A}" "${NS}" "${NS1}" "${NS2}" "${NS3}" "${NS4}" "${NS5}" "${NS6}"; do
-            [ -z "$R" ] && continue
-            if [ -z "$(dig "@${host}" "${R}")" ]; then
-                echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
-            else
-                echo -e "\e[32mSuccess - Querying: ${R} from ${host}\e[0m"
-            fi
-        done
+      ping -c 1 "${host}" >/dev/null &
     done
+    wait
+  done
 }
 
-# Menu Functions
-add_ns() {
-    read -p "Enter NS to add: " NS
-    echo -e "\e[32mNS set to: $NS\e[0m"
+endscript() {
+  unset NS NS1 NS2 NS3 NS4 NS5 NS6 A LOOP_DELAY HOSTS
+  exit 1
 }
 
-check_ns() {
-    echo -e "\e[33mCurrent NS:\e[0m"
-    for ns_var in NS NS1 NS2 NS3 NS4 NS5 NS6; do
-        eval "val=\${$ns_var}"
-        [ -n "$val" ] && echo "$val"
+trap endscript 2 15
+
+check() {
+  for host in "${HOSTS[@]}"; do
+    for R in "${A}" "${NS}" "${NS1}" "${NS2}" "${NS3}" "${NS4}" "${NS5}" "${NS6}"; do
+      if [ -z "$R" ]; then continue; fi
+      if [ -z "$(dig "@${host}" "${R}")" ]; then
+        echo -e "\e[31mFailed - Querying: ${R} from ${host}\e[0m"
+      else
+        echo -e "\e[32mSuccess - Querying: ${R} from ${host}\e[0m"
+      fi
     done
-}
-
-delete_ns() {
-    echo -e "\e[31mClearing custom NS entries...\e[0m"
-    NS=''; NS1=''; NS2=''; NS3=''; NS4=''
+  done
 }
 
 start_loop() {
-    banner
-    echo "Script loop: ${LOOP_DELAY} seconds"
-    network_booster & NETWORK_BOOSTER_PID=$!
-    trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; exit' 2 15
-    while true; do
-        check
-        echo '-----------------------------------------'
-        sleep "${LOOP_DELAY}"
-    done
+  network_booster & NETWORK_BOOSTER_PID=$!
+  trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; endscript' 2 15
+  while true; do
+    check
+    echo '-----------------------------------------'
+    sleep "${LOOP_DELAY}"
+  done
 }
 
-# Wakelock (Termux)
-termux-wake-lock 2>/dev/null
+autorun_on() {
+  grep -q "bash $(realpath "$0")" ~/.bashrc || echo "bash $(realpath "$0")" >> ~/.bashrc
+  echo -e "\e[1;33mAutorun enabled.\e[0m"
+}
 
-# Autorun Setup
-mkdir -p ~/.termux
-echo 'bash ~/dnsloop.sh' > ~/.termux/boot.sh
-chmod +x ~/.termux/boot.sh
+autorun_off() {
+  sed -i "/bash $(realpath "$0")/d" ~/.bashrc
+  echo -e "\e[1;31mAutorun disabled.\e[0m"
+}
 
-# Main Menu
-while true; do
+autorun_status() {
+  if grep -q "bash $(realpath "$0")" ~/.bashrc; then
+    echo -e "\e[1;32mAutorun is ON.\e[0m"
+  else
+    echo -e "\e[1;31mAutorun is OFF.\e[0m"
+  fi
+}
+
+menu() {
+  while true; do
     banner
-    echo -e "\e[36m1) Add NS"
-    echo "2) Check NS"
-    echo "3) Delete NS"
-    echo "4) Start Loop"
-    echo "5) Exit\e[0m"
-    read -p "Select option: " opt
-    case $opt in
-        1) add_ns ;;
-        2) check_ns ;;
-        3) delete_ns ;;
-        4) start_loop ;;
-        5) echo "Exiting..."; exit ;;
-        *) echo "Invalid option" ;;
+    echo -e "\e[1;33m[1] Add NS\n[2] Check NS\n[3] Delete NS\n[4] Start Loop\n[5] Autorun ON\n[6] Autorun OFF\n[7] Autorun Status\n[8] Exit\e[0m"
+    read -p "Enter choice: " choice
+    case $choice in
+      1) read -p "Enter NS: " NS; echo -e "\e[1;32mNS set to: $NS\e[0m";;
+      2) check;;
+      3) NS=""; NS1=""; NS2=""; NS3=""; NS4=""; NS5=""; NS6=""; echo -e "\e[1;31mNS cleared.\e[0m";;
+      4) start_loop;;
+      5) autorun_on;;
+      6) autorun_off;;
+      7) autorun_status;;
+      8) exit;;
+      *) echo -e "\e[1;31mInvalid choice!\e[0m";;
     esac
-done
+  done
+}
+
+menu
