@@ -71,15 +71,23 @@ check() {
 }
 
 enable_autorun() {
-    mkdir -p ~/../usr/etc/profile.d
     SCRIPT_PATH="$(realpath "$0")"
-    echo "bash '$SCRIPT_PATH'" > ~/../usr/etc/profile.d/weew-autorun.sh
-    chmod +x ~/../usr/etc/profile.d/weew-autorun.sh
-    echo -e "\e[32mAutorun successfully enabled!\e[0m"
+    AUTORUN_CMD="bash '$SCRIPT_PATH'"
+
+    # Check if already added
+    if grep -Fxq "$AUTORUN_CMD" ~/.bashrc; then
+        echo -e "\e[32mAutorun already enabled!\e[0m"
+    else
+        echo "$AUTORUN_CMD" >> ~/.bashrc
+        echo -e "\e[32mAutorun successfully enabled!\e[0m"
+    fi
 }
 
 disable_autorun() {
-    rm -f ~/../usr/etc/profile.d/weew-autorun.sh
+    SCRIPT_PATH="$(realpath "$0")"
+    AUTORUN_CMD="bash '$SCRIPT_PATH'"
+
+    sed -i "\|$AUTORUN_CMD|d" ~/.bashrc
     echo -e "\e[32mAutorun successfully deleted!\e[0m"
 }
 
