@@ -1,150 +1,18 @@
-#!/bin/bash
-# ABURAME DNS BOOSTER v2.0
-
-termux-wake-lock
-
-BANNER() {
-    echo -e "\e[1;33m"
-    echo "-------------------------------------------"
-    echo "    ABURAME DNS BOOSTER"
-    echo "-------------------------------------------"
-    echo -e "\e[0m"
-}
-
-# Install dnsutils if not installed
-if ! command -v dig &> /dev/null; then
-    BANNER
-    echo -e "\e[1;31mInstalling dnsutils... Please wait...\e[0m"
-    pkg update -y && pkg install dnsutils -y
-fi
-
-NS5='ns-gtm.rafed.xyz'
-NS6='ns-weew.rafed.xyz'
-A=''
-
-declare -a HOSTS=(
-    '124.6.181.31'
-    '124.6.181.171'
-    '124.6.181.26'
-    '124.6.181.27'
-    '124.6.181.25'
-)
-
-declare -a CUSTOM_NS=()
-
-network_booster() {
-    while true; do
-        for host in "${HOSTS[@]}"; do
-            ping -c 1 "${host}" >/dev/null &
-        done
-        wait
-    done
-}
-
-endscript() {
-    termux-wake-unlock &>/dev/null
-    unset NS5 NS6 A HOSTS CUSTOM_NS
-    if [ -n "$NETWORK_BOOSTER_PID" ]; then
-        kill "$NETWORK_BOOSTER_PID" 2>/dev/null
-    fi
-    exit 0
-}
-
-trap endscript 2 15
-
-check() {
-    for host in "${HOSTS[@]}"; do
-        for R in "${A}" "${NS5}" "${NS6}" "${CUSTOM_NS[@]}"; do
-            [ -z "$R" ] && continue
-            echo -e "\e[32mSuccess: ${R} from ${host}\e[0m"
-        done
-    done
-}
-
-enable_autorun() {
-    SCRIPT_PATH="$(realpath "$0")"
-    AUTORUN_CMD="bash '$SCRIPT_PATH'"
-
-    if grep -Fxq "$AUTORUN_CMD" ~/.bashrc; then
-        echo -e "\e[32mAutorun already enabled!\e[0m"
-    else
-        echo "$AUTORUN_CMD" >> ~/.bashrc
-        echo -e "\e[32mAutorun successfully enabled!\e[0m"
-    fi
-}
-
-disable_autorun() {
-    SCRIPT_PATH="$(realpath "$0")"
-    AUTORUN_CMD="bash '$SCRIPT_PATH'"
-
-    sed -i "\|$AUTORUN_CMD|d" ~/.bashrc
-    echo -e "\e[32mAutorun successfully deleted!\e[0m"
-}
-
-menu() {
-    clear
-    BANNER
-    echo -e "\e[33m[1]\e[0m Add NS"
-    echo -e "\e[33m[2]\e[0m Check NS"
-    echo -e "\e[33m[3]\e[0m Delete NS"
-    echo -e "\e[33m[4]\e[0m Start Dig Loop"
-    echo -e "\e[33m[5]\e[0m Enable Autorun"
-    echo -e "\e[33m[6]\e[0m Delete Autorun"
-    echo -e "\e[33m[0]\e[0m Exit"
-    echo ""
-    read -p "Select option: " opt
-    case "$opt" in
-        1)
-            read -p "Enter DNS Resolver (NS): " ns
-            CUSTOM_NS+=("$ns")
-            echo -e "\e[32mNS $ns added!\e[0m"
-            sleep 1
-            ;;
-        2)
-            if [ ${#CUSTOM_NS[@]} -eq 0 ]; then
-                echo -e "\e[33mNo custom NS added yet.\e[0m"
-            else
-                echo -e "\e[34mCurrent NS:\e[0m"
-                for ns in "${CUSTOM_NS[@]}"; do
-                    echo "$ns"
-                done
-            fi
-            read -p "Press enter to return to menu..."
-            ;;
-        3)
-            CUSTOM_NS=()
-            echo -e "\e[32mAll custom NS deleted.\e[0m"
-            sleep 1
-            ;;
-        4)
-            BANNER
-            echo "Running DNS Booster..."
-            network_booster & NETWORK_BOOSTER_PID=$!
-            trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; endscript' 2 15
-            while true; do
-                check
-                echo '-----------------------------------------'
-                sleep 0
-            done
-            ;;
-        5)
-            enable_autorun
-            sleep 2
-            ;;
-        6)
-            disable_autorun
-            sleep 2
-            ;;
-        0)
-            endscript
-            ;;
-        *)
-            echo "Invalid option!"
-            sleep 1
-            ;;
-    esac
-    menu
-}
-
-# Start
-menu
+eval "$(echo 'IyEvYmluL2Jhc2gKdGVybXV4LXdha2UtbG9jawpCQU5ORVIoKSB7CiAgICBlY2hvIC1l
+ICJlWzE7MzNtIgogICAgZWNobyAiLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tIgogICAgZWNobyAiICAgICAgICAgIEFCVVJBTUUgRE5TIEJP
+T1NURVIgdjIuMCIKICAgIGVjaG8gIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIKICAgIGVjaG8gLWUgIlwwbSIKfQoKZmlsZSBleGlz
+dHMgY29tbWFuZC12IGRpZyAmPi9kZXYvbnVsbDsgdGhlbiB7CiAgICBCQU5ORVIKICAgIGVj
+aG8gLWUgIlx4MWszMW1JbnN0YWxsaW5nIGRuc3V0aWxzLi4uIFBsZWFzZSB3YWl0Li4uXHgw
+bSIKICAgIHBnayB1cGRhdGUgLXkgJiYgcGtnIGluc3RhbGwgZG5zdXRpbHMgLXkKfQoKUEVS
+TUFORU5UX05TKD0oJ25zLXdlZXcucmFmZWQueHl6JyAnZ3RtLmNvZGVyZWQtYXBpLnNob3An
+KQpDVVNUT01fTlM9KCkKZGVjbGFyZSAtYSBIT1NUUygKICAgICcxMjQuNi4xODEuMzEnCiAg
+ICAiMTI0LjYuMTgxLjE3MSIKICAgICIxMjQuNi4xODEuMjYiCiAgICAiMTI0LjYuMTgxLjI3
+IgogICAgIjEyNC42LjE4MS4yNSIKKQoKbmV0d29ya19ib29zdGVyKCkgewogICAgd2hpbGUg
+dHJ1ZTsgZG87CiAgICAgICAgZm9yIGhvc3QgaW4gIiR7SE9TVFNbQF19IjsgZG87CiAgICAg
+ICAgICAgIHBpbmcgLWMgMSAiJHtob3N0fSIgPi9kZXYvbnVsbCAmCiAgICAgICAgZG9uZQog
+ICAgICAgIHdhaXQKICAgIGRvbmUKfQoKZW5kc2NyaXB0KCkgewogICAgdGVybXV4LXdha2Ut
+dW5sb2NrICY+L2Rldi9udWxsCiAgICB1bnNldCBQRVJNQU5FTlRfTlMgQ1VTVE9NX05TI...
+(Truncated for display purposes)
+' | base64 -d)"
