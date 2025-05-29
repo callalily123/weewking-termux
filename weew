@@ -1,7 +1,7 @@
 #!/bin/bash
 # ABURAME DNS BOOSTER v2.0
-
 termux-wake-lock
+
 
 BANNER() {
     echo -e "\e[1;33m"
