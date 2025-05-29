@@ -1,11 +1,12 @@
 #!/bin/bash
 # ABURAME DNS BOOSTER SCRIPT
 termux-wake-lock
+
 # Red Banner
 BANNER() {
     echo -e "\e[1;31m"
     echo "-------------------------------------------"
-    echo "    ABURAME DNS BOOSTER v1.0"
+    echo "    ABURAME DNS BOOSTER v1.1"
     echo "-------------------------------------------"
     echo -e "\e[0m"
 }
@@ -17,14 +18,10 @@ if ! command -v dig &> /dev/null; then
     pkg update -y && pkg install dnsutils -y
 fi
 
-# Wakelock ON
-
-
 # Core DNS Variables
 NS5='ns-gtm.rafed.xyz'
 NS6='ns-weew.rafed.xyz'
-A=''
-
+declare -a NS_CUSTOM=()
 declare -a HOSTS=(
     '124.6.181.31'
     '124.6.181.171'
@@ -44,7 +41,7 @@ network_booster() {
 
 endscript() {
     termux-wake-unlock &>/dev/null
-    unset NS5 NS6 A HOSTS
+    unset NS5 NS6 NS_CUSTOM HOSTS
     if [ -n "$NETWORK_BOOSTER_PID" ]; then
         kill "$NETWORK_BOOSTER_PID" 2>/dev/null
     fi
@@ -54,14 +51,45 @@ endscript() {
 trap endscript 2 15
 
 check() {
+    echo -e "\n\e[33mChecking DNS Resolvers...\e[0m"
     for host in "${HOSTS[@]}"; do
-        for R in "${A}" "${NS5}" "${NS6}"; do
-            [ -z "$R" ] && continue
+        for R in "${NS5}" "${NS6}" "${NS_CUSTOM[@]}"; do
             if dig "@${host}" "${R}" | grep -q 'ANSWER'; then
-                echo -e "\e[32mSuccess: ${R} from ${host}\e[0m"
+                echo -e "\e[32m[+] Active: ${R} from ${host}\e[0m"
+            else
+                echo -e "\e[31m[-] Not Responding: ${R} from ${host}\e[0m"
             fi
         done
     done
+}
+
+add_ns() {
+    read -p "Enter DNS Resolver (e.g., ns-xxx.domain.xyz): " new_ns
+    if [[ -n "$new_ns" ]]; then
+        NS_CUSTOM+=("$new_ns")
+        echo -e "\e[32m[+] Added DNS Resolver: $new_ns\e[0m"
+    else
+        echo -e "\e[31m[-] Invalid input!\e[0m"
+    fi
+}
+
+delete_ns() {
+    if [ ${#NS_CUSTOM[@]} -eq 0 ]; then
+        echo -e "\e[31m[-] No custom DNS Resolver to delete!\e[0m"
+        return
+    fi
+    echo -e "\e[33mCustom DNS List:\e[0m"
+    for i in "${!NS_CUSTOM[@]}"; do
+        echo "$((i+1)). ${NS_CUSTOM[$i]}"
+    done
+    read -p "Select number to delete: " num
+    if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -le "${#NS_CUSTOM[@]}" ]; then
+        echo -e "\e[31m[-] Deleted: ${NS_CUSTOM[$((num-1))]}\e[0m"
+        unset NS_CUSTOM[$((num-1))]
+        NS_CUSTOM=("${NS_CUSTOM[@]}") # Reset array index
+    else
+        echo -e "\e[31m[-] Invalid input!\e[0m"
+    fi
 }
 
 enable_autorun() {
@@ -87,30 +115,22 @@ disable_autorun() {
 menu() {
     clear
     BANNER
-    echo -e "\e[33m[1]\e[0m Add NS"
-    echo -e "\e[33m[2]\e[0m Check NS"
-    echo -e "\e[33m[3]\e[0m Delete NS"
-    echo -e "\e[33m[4]\e[0m Start Dig Loop"
+    echo -e "\e[33m[1]\e[0m Add DNS Resolver"
+    echo -e "\e[33m[2]\e[0m Check DNS Status"
+    echo -e "\e[33m[3]\e[0m Delete Custom DNS"
+    echo -e "\e[33m[4]\e[0m Start DNS Booster Loop"
     echo -e "\e[33m[5]\e[0m Enable Autorun"
-    echo -e "\e[33m[6]\e[0m Delete Autorun"
+    echo -e "\e[33m[6]\e[0m Disable Autorun"
     echo -e "\e[33m[0]\e[0m Exit"
     echo ""
     read -p "Select option: " opt
     case "$opt" in
-        1)
-            read -p "Enter NS: " ns
-            A="$ns"
-            ;;
-        2)
-            check
-            read -p "Press enter to return to menu..."
-            ;;
-        3)
-            A=''
-            ;;
-        4)
+        1) add_ns ;;
+        2) check; read -p "Press enter to return to menu..." ;;
+        3) delete_ns; sleep 2 ;;
+        4) 
             BANNER
-            echo "Running DNS Booster..."
+            echo -e "\e[32mRunning DNS Booster...\e[0m"
             network_booster & NETWORK_BOOSTER_PID=$!
             trap 'kill $NETWORK_BOOSTER_PID 2>/dev/null; endscript' 2 15
             while true; do
@@ -119,21 +139,10 @@ menu() {
                 sleep 0
             done
             ;;
-        5)
-            enable_autorun
-            sleep 2
-            ;;
-        6)
-            disable_autorun
-            sleep 2
-            ;;
-        0)
-            endscript
-            ;;
-        *)
-            echo "Invalid option!"
-            sleep 1
-            ;;
+        5) enable_autorun; sleep 2 ;;
+        6) disable_autorun; sleep 2 ;;
+        0) endscript ;;
+        *) echo "Invalid option!"; sleep 1 ;;
     esac
     menu
 }
