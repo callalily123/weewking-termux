@@ -1,11 +1,11 @@
 #!/bin/bash
-# JUMAWAN WEEWKING DNS BOOSTER SCRIPT
+# ABURAME DNS BOOSTER SCRIPT
 termux-wake-lock
 # Red Banner
 BANNER() {
     echo -e "\e[1;31m"
     echo "-------------------------------------------"
-    echo "    JUMAWAN WEEWKING DNS BOOSTER v1.0"
+    echo "    ABURAME DNS BOOSTER v1.0"
     echo "-------------------------------------------"
     echo -e "\e[0m"
 }
