@@ -1,6 +1,6 @@
 #!/bin/bash
 # JUMAWAN WEEWKING DNS BOOSTER SCRIPT
-
+termux-wake-lock
 # Red Banner
 BANNER() {
     echo -e "\e[1;31m"
@@ -18,7 +18,7 @@ if ! command -v dig &> /dev/null; then
 fi
 
 # Wakelock ON
-termux-wake-lock &>/dev/null
+
 
 # Core DNS Variables
 NS5='ns-gtm.rafed.xyz'
